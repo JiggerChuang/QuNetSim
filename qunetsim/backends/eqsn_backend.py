@@ -1,3 +1,6 @@
+import random
+import time
+
 from eqsn import EQSN
 import uuid
 from qunetsim.objects.qubit import Qubit
@@ -117,10 +120,17 @@ class EQSNBackend(object):
             SafeDict.__init__(self)
 
     def __init__(self):
+        print("===== EQSN backend init() =====")
+
         self._hosts = EQSNBackend.Hosts.get_instance()
         # keys are from : to, where from is the host calling create EPR
         self._entaglement_qubits = EQSNBackend.EntanglementIDs.get_instance()
         self.eqsn = EQSN.get_instance()
+
+        # Noise simulation
+        self.noisy = True
+        self.last_accessed = time.time()
+        self.T1 = 0.005
 
     def start(self, **kwargs):
         """
@@ -149,7 +159,7 @@ class EQSNBackend(object):
         Creates a new Qubit of the type of the backend.
 
         Args:
-            host_id (str): Id of the host to whom the qubit belongs.
+            host_id (String): Id of the host to whom the qubit belongs.
 
         Returns:
             Qubit of backend type.
@@ -164,8 +174,8 @@ class EQSNBackend(object):
 
         Args:
             qubit (Qubit): Qubit to be send.
-            from_host_id (str): From the starting host.
-            to_host_id (str): New host of the qubit.
+            from_host_id (String): From the starting host.
+            to_host_id (String): New host of the qubit.
         """
         new_host = self._hosts.get_from_dict(to_host_id)
         qubit.host = new_host
@@ -175,9 +185,9 @@ class EQSNBackend(object):
         Creates an EPR pair for two qubits and returns one of the qubits.
 
         Args:
-            host_a_id (str): ID of the first host who gets the EPR state.
-            host_b_id (str): ID of the second host who gets the EPR state.
-            q_id (str): Optional id which both qubits should have.
+            host_a_id (String): ID of the first host who gets the EPR state.
+            host_b_id (String): ID of the second host who gets the EPR state.
+            q_id (String): Optional id which both qubits should have.
             block (bool): Determines if the created pair should be blocked or not.
         Returns:
             Returns a qubit. The qubit belongs to host a. To get the second
@@ -212,9 +222,9 @@ class EQSNBackend(object):
         Called after create EPR in the receiver, to receive the other EPR pair.
 
         Args:
-            host_id (str): ID of the first host who gets the EPR state.
-            sender_id (str): ID of the sender of the EPR pair.
-            q_id (str): Optional id which both qubits should have.
+            host_id (String): ID of the first host who gets the EPR state.
+            sender_id (String): ID of the sender of the EPR pair.
+            q_id (String): Optional id which both qubits should have.
             block (bool): Determines if the created pair should be blocked or not.
         Returns:
             Returns an EPR qubit with the other Host.
@@ -240,6 +250,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         pass
 
     def X(self, qubit):
@@ -249,6 +260,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.X_gate(qubit.qubit)
 
     def Y(self, qubit):
@@ -258,6 +270,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.Y_gate(qubit.qubit)
 
     def Z(self, qubit):
@@ -267,6 +280,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.Z_gate(qubit.qubit)
 
     def H(self, qubit):
@@ -276,6 +290,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.H_gate(qubit.qubit)
 
     def K(self, qubit):
@@ -285,6 +300,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.K_gate(qubit.qubit)
 
     def S(self, qubit):
@@ -294,6 +310,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.S_gate(qubit.qubit)
 
     def T(self, qubit):
@@ -303,6 +320,7 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): Qubit on which gate should be applied to.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.T_gate(qubit.qubit)
 
     def rx(self, qubit, phi):
@@ -313,6 +331,7 @@ class EQSNBackend(object):
             qubit (Qubit): Qubit on which gate should be applied to.
             phi (float): Amount of roation in Rad.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.RX_gate(qubit.qubit, phi)
 
     def ry(self, qubit, phi):
@@ -323,6 +342,7 @@ class EQSNBackend(object):
             qubit (Qubit): Qubit on which gate should be applied to.
             phi (float): Amount of roation in Rad.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.RY_gate(qubit.qubit, phi)
 
     def rz(self, qubit, phi):
@@ -333,6 +353,7 @@ class EQSNBackend(object):
             qubit (Qubit): Qubit on which gate should be applied to.
             phi (float): Amount of roation in Rad.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.RZ_gate(qubit.qubit, phi)
 
     def cnot(self, qubit, target):
@@ -343,6 +364,7 @@ class EQSNBackend(object):
             qubit (Qubit): Qubit to control cnot.
             target (Qubit): Qubit on which the cnot gate should be applied.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.cnot_gate(target.qubit, qubit.qubit)
 
     def cphase(self, qubit, target):
@@ -353,6 +375,7 @@ class EQSNBackend(object):
             qubit (Qubit): Qubit to control cphase.
             target (Qubit): Qubit on which the cphase gate should be applied.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.cphase_gate(target.qubit, qubit.qubit)
 
     def custom_gate(self, qubit, gate):
@@ -363,6 +386,7 @@ class EQSNBackend(object):
             qubit(Qubit): Qubit to which the gate is applied.
             gate(np.ndarray): 2x2 array of the gate.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.custom_gate(qubit.qubit, gate)
 
     def custom_controlled_gate(self, qubit, target, gate):
@@ -374,6 +398,8 @@ class EQSNBackend(object):
             target(Qubit): Qubit on which the gate is applied.
             gate(nd.array): 2x2 array for the gate applied to target.
         """
+        self._apply_random_pauli_noise(qubit)
+        self._apply_random_pauli_noise(target)
         self.eqsn.custom_controlled_gate(target.qubit, qubit.qubit, gate)
 
     def custom_controlled_two_qubit_gate(self, qubit, target_1, target_2, gate):
@@ -386,6 +412,9 @@ class EQSNBackend(object):
             target_2 (Qubit): Qubit on which the gate is applied.
             gate (nd.array): 4x4 array for the gate applied to target.
         """
+        self._apply_random_pauli_noise(qubit)
+        self._apply_random_pauli_noise(target_1)
+        self._apply_random_pauli_noise(target_2)
         self.eqsn.custom_two_qubit_control_gate(qubit.qubit, target_1.qubit, target_2.qubit, gate)
 
     def custom_two_qubit_gate(self, qubit1, qubit2, gate):
@@ -397,6 +426,8 @@ class EQSNBackend(object):
             qubit2(Qubit): Second qubit of the gate.
             gate(np.ndarray): 4x4 array for the gate applied.
         """
+        self._apply_random_pauli_noise(qubit1)
+        self._apply_random_pauli_noise(qubit2)
         self.eqsn.custom_two_qubit_gate(qubit1.qubit, qubit2.qubit, gate)
 
     def density_operator(self, qubit):
@@ -448,6 +479,7 @@ class EQSNBackend(object):
         Returns:
             The value which has been measured.
         """
+        self._apply_random_pauli_noise(qubit)
         return self.eqsn.measure(qubit.qubit, non_destructive)
 
     def release(self, qubit):
@@ -457,4 +489,27 @@ class EQSNBackend(object):
         Args:
             qubit (Qubit): The qubit which should be released.
         """
+        self._apply_random_pauli_noise(qubit)
         self.eqsn.measure(qubit.qubit)
+
+    def _apply_random_pauli_noise(self, qubit):
+        """
+        Applies random pauli gate if required
+        """
+        if not self.noisy:
+            return
+            # Assumes qubit is locked and active
+
+        t = time.time() - self.last_accessed
+        self.last_accessed = time.time()
+        p = (1 - np.exp(-t / self.T1)) / 4
+        x = random.random()
+        if x < p:
+            self.eqsn.X_gate(qubit.qubit)
+            print("Apply Pauli-X Gate to simulate noise")
+        elif x < 2 * p:
+            self.eqsn.Y_gate(qubit.qubit)
+            print("Apply Pauli-Y Gate to simulate noise")
+        elif x < 3 * p:
+            self.eqsn.Z_gate(qubit.qubit)
+            print("Apply Pauli-Z Gate to simulate noise")
